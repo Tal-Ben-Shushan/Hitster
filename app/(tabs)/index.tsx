@@ -1,66 +1,69 @@
-import React, { useState } from "react";
-import { Button, Text, View } from "react-native";
-import { SpotifyPlayerState } from "../spotify/SpotifyModule";
-import SpotifyService from "../spotify/SpotifyService";
+import React, { useEffect, useState } from "react";
+import { View, Button, StyleSheet } from "react-native";
+import * as AuthSession from "expo-auth-session";
 
-export default function HomeScreen() {
-  const [state, setState] = useState<SpotifyPlayerState | null>(null);
+const CLIENT_ID = "2bee3ff1f82f45edb34579bdd9d526d8";
+const SCOPES = ["user-modify-playback-state", "user-read-playback-state"];
 
-  const connectSpotify = async () => {
-    try {
-      await SpotifyService.connect();
-      console.log("Connected");
-    } catch (e) {
-      console.log("Connection error", e);
+const discovery = {
+  authorizationEndpoint: "https://accounts.spotify.com/authorize",
+  tokenEndpoint: "https://accounts.spotify.com/api/token",
+};
+
+export default function TabTwoScreen() {
+  const [token, setToken] = useState<string | null>(null);
+
+  const redirectUri = AuthSession.makeRedirectUri(); // Expo Go safe
+console.log(redirectUri);
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: CLIENT_ID,
+      scopes: SCOPES,
+      redirectUri,
+      responseType: AuthSession.ResponseType.Token, // Implicit Grant
+    },
+    discovery
+  );
+
+  useEffect(() => {
+    if (response?.type === "success" && response.params.access_token) {
+      setToken(response.params.access_token);
     }
+  }, [response]);
+
+  const SPOTIFY_API = "https://api.spotify.com/v1/me/player";
+
+  const play = async () => {
+    if (!token) return;
+    await fetch(`${SPOTIFY_API}/play`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
   };
 
-  const playSong = async () => {
-    await SpotifyService.playTrack("3n3Ppam7vgaVa1iaRUc9Lp"); // example track ID
-  };
-
-  const pauseSong = async () => {
-    await SpotifyService.pause();
-  };
-
-  const resumeSong = async () => {
-    await SpotifyService.resume();
-  };
-
-  const nextSong = async () => {
-    await SpotifyService.skipNext();
-  };
-
-  const previousSong = async () => {
-    await SpotifyService.skipPrevious();
-  };
-
-  const getState = async () => {
-    const current = await SpotifyService.getState();
-    setState(current);
+  const pause = async () => {
+    if (!token) return;
+    await fetch(`${SPOTIFY_API}/pause`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
   };
 
   return (
-    <View style={{ padding: 40 }}>
-      <Button title="Connect" onPress={connectSpotify} />
-      <Button title="Play" onPress={playSong} />
-      <Button title="Pause" onPress={pauseSong} />
-      <Button title="Resume" onPress={resumeSong} />
-      <Button title="Next" onPress={nextSong} />
-      <Button title="Previous" onPress={previousSong} />
-      <Button title="Get State" onPress={getState} />
-
-      {state && (
-        <View style={{ marginTop: 20 }}>
-          <Text>Track: {state.trackName}</Text>
-          <Text>Artist: {state.artistName}</Text>
-          <Text>Album: {state.albumName}</Text>
-          <Text>Paused: {state.isPaused ? "Yes" : "No"}</Text>
-          <Text>
-            Position: {Math.floor(state.position / 1000)}s / {Math.floor(state.duration / 1000)}s
-          </Text>
-        </View>
+    <View style={styles.container}>
+      {!token ? (
+        <Button title="Login to Spotify" disabled={!request} onPress={() => promptAsync()} />
+      ) : (
+        <>
+          <Button title="Play" onPress={play} />
+          <Button title="Pause" onPress={pause} />
+        </>
       )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", padding: 20 },
+});
