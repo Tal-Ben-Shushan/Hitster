@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Button, StyleSheet } from "react-native";
 import * as AuthSession from "expo-auth-session";
 
-const CLIENT_ID = "2bee3ff1f82f45edb34579bdd9d526d8";
+const CLIENT_ID = "...";
 const SCOPES = ["user-modify-playback-state", "user-read-playback-state"];
 
 const discovery = {
@@ -13,17 +13,17 @@ const discovery = {
 export default function TabTwoScreen() {
   const [token, setToken] = useState<string | null>(null);
 
-  const redirectUri = AuthSession.makeRedirectUri(); // Expo Go safe
-console.log(redirectUri);
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: "beatBlitz", path: "spotify-auth" });
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: CLIENT_ID,
       scopes: SCOPES,
       redirectUri,
-      responseType: AuthSession.ResponseType.Token, // Implicit Grant
+      responseType: AuthSession.ResponseType.Code,
+      usePKCE: true,
     },
-    discovery
+    discovery,
   );
 
   useEffect(() => {
