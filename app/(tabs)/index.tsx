@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { View, Button, StyleSheet } from "react-native";
 import * as AuthSession from "expo-auth-session";
+import { useAuth } from "@/context/AuthContext";
+import { ThemedText } from "@/components/themed-text";
+import * as SecureStore from "expo-secure-store";
 
 const CLIENT_ID = "...";
+
 const SCOPES = ["user-modify-playback-state", "user-read-playback-state"];
 
 const discovery = {
@@ -11,9 +15,9 @@ const discovery = {
 };
 
 export default function TabTwoScreen() {
-  const [token, setToken] = useState<string | null>(null);
+  const { token, logout, isLoading } = useAuth();
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: "beatBlitz", path: "spotify-auth" });
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: "beatblitz", path: "spotify-auth" });
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -26,11 +30,13 @@ export default function TabTwoScreen() {
     discovery,
   );
 
-  useEffect(() => {
-    if (response?.type === "success" && response.params.access_token) {
-      setToken(response.params.access_token);
+  const handleLogin = async () => {
+    if (request?.codeVerifier) {
+      // SAVE THE VERIFIER BEFORE THE BROWSER OPENS
+      await SecureStore.setItemAsync("temp_code_verifier", request.codeVerifier);
+      promptAsync();
     }
-  }, [response]);
+  };
 
   const SPOTIFY_API = "https://api.spotify.com/v1/me/player";
 
@@ -50,10 +56,17 @@ export default function TabTwoScreen() {
     });
   };
 
+  if (isLoading)
+    return (
+      <View style={styles.container}>
+        <ThemedText>Loading...</ThemedText>
+      </View>
+    );
+
   return (
     <View style={styles.container}>
       {!token ? (
-        <Button title="Login to Spotify" disabled={!request} onPress={() => promptAsync()} />
+        <Button title="Login to Spotify" disabled={!request} onPress={handleLogin} />
       ) : (
         <>
           <Button title="Play" onPress={play} />
