@@ -1,6 +1,7 @@
 // context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
+import { env } from "@/config/env";
 
 type AuthContextType = {
   token: string | null;
@@ -8,7 +9,6 @@ type AuthContextType = {
   isLoading: boolean;
   logout: () => Promise<void>;
 };
-const CLIENT_ID = "...";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: new URLSearchParams({
           grant_type: "refresh_token",
           refresh_token: storedRefreshToken,
-          client_id: CLIENT_ID,
+          client_id: env.spotifyClientId,
         }).toString(),
       });
 

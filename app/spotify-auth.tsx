@@ -4,8 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import * as AuthSession from "expo-auth-session";
 import * as SecureStore from "expo-secure-store";
 import { useAuth } from "../context/AuthContext";
-
-const CLIENT_ID = "...";
+import { env } from "@/config/env";
 
 export default function SpotifyAuth() {
   const { setToken } = useAuth();
@@ -32,7 +31,7 @@ export default function SpotifyAuth() {
           grant_type: "authorization_code",
           code: authCode,
           redirect_uri: redirectUri,
-          client_id: CLIENT_ID,
+          client_id: env.spotifyClientId,
           code_verifier: savedVerifier || "", // Now it's not empty!
         }).toString(),
       });

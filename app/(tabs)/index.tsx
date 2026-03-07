@@ -4,8 +4,7 @@ import * as AuthSession from "expo-auth-session";
 import { useAuth } from "@/context/AuthContext";
 import { ThemedText } from "@/components/themed-text";
 import * as SecureStore from "expo-secure-store";
-
-const CLIENT_ID = "...";
+import { env } from "@/config/env";
 
 const SCOPES = ["user-modify-playback-state", "user-read-playback-state"];
 
@@ -21,7 +20,7 @@ export default function TabTwoScreen() {
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: CLIENT_ID,
+      clientId: env.spotifyClientId,
       scopes: SCOPES,
       redirectUri,
       responseType: AuthSession.ResponseType.Code,
@@ -29,6 +28,7 @@ export default function TabTwoScreen() {
     },
     discovery,
   );
+console.log(env.spotifyClientId);
 
   const handleLogin = async () => {
     if (request?.codeVerifier) {
